@@ -90,8 +90,8 @@ def getAlphaBotCalenderData():
         startdate = time.mktime(datetime.datetime(startyear,startmonth,startday).timetuple())*1000
         enddate = time.time() * 1000
         print(startdate,enddate)
-        # url = "https://www.alphabot.app/api/projectData?calendar=true&startDate=1666722600000&endDate=1670351400000&selectedMonth=11&a=0xc5c11ec3ca8e38fb6af06beb25b9ea76b5b1e0f9"
-        url = f"https://www.alphabot.app/api/projectData?startDate={startdate}&endDate={enddate}&selectedMonth=10&a={walletAddress}"
+
+        url = f"https://www.alphabot.app/api/projectData?startDate={startdate}&endDate={enddate}&a={walletAddress}"
         cookies = {
             "__Secure-next-auth.session-token": globals()["alphabotCookie"]
         }
