@@ -12,19 +12,20 @@ import os
 nest_asyncio.apply()
 
 load_dotenv()
-
 # environment variables with your details.
 # create a .env file and add your details in key=value format
 # Script won't work without these details.
-token = os.environ['DISCORD_TOKEN_2']
-alphabotCookie = os.environ['ALPHABOT_COOKIE_2']
-walletAddress = os.environ['WALLET_2']
+accountNo = 0
+
+token = os.environ[f'DISCORD_TOKEN_{accountNo}']
+alphabotCookie = os.environ[f'ALPHABOT_COOKIE_{accountNo}']
+walletAddress = os.environ[f'WALLET_{accountNo}']
 
 # It only works for time period of little over a month from the start date.
 # So if you want to remove junk servers from october use start day like 1st october
 startday = 1
-startmonth = 9
-startyear = 2022
+startmonth = 2
+startyear = 2023
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -33,13 +34,20 @@ client = discord.Client(intents=intents)
 whitelist = [
     # Ex.
     # alpha
-    "897718057596747816", "908478124847665183", "972246861555580979", "907692441061175306",
-    "1006070289458806844", "951857903877386280", "964611727859793920", "938840599975563334",
     # whitelists
-    "995239463271813151", "956264991042965635", "952600647604244551", "931872261886062602",
     # airdrops server
-    "972246861555580979",
+    # wl
+    # "","","","",
 ]
+
+blacklist = [
+    # "","","","",
+    # "","","","",
+]
+
+remove_only_blacklist = False
+
+print("whitelist: ", whitelist)
 
 
 # checks if the user won at least one giveaway of the given guild name
@@ -76,10 +84,8 @@ def check_if_no_winnings(search_str):
                     continue
             print(f"isLost:{is_lost},isWinnerOrPending:{is_winner_or_pending}")
             if not is_winner_or_pending and is_lost:
-                # print("inside is lost")
                 return True
             elif is_winner_or_pending:
-                # print("in is w/p")
                 return False
             else:
                 return False
@@ -88,24 +94,6 @@ def check_if_no_winnings(search_str):
             return False
     except Exception as e:
         print(e)
-
-
-# now_time = datetime.datetime.now().strftime("%m %Y").split(" ")
-# while startmonth <= int(now_time[0]) or startyear <= int(now_time[1]):
-#     print(startmonth)
-#     startmonth+=1
-#     if startmonth == 12:
-#         startyear+=1
-#         startmonth = 1
-#     print(startmonth,startyear)
-# while time.mktime(datetime.datetime(startyear, startmonth, startday).timetuple()) < time.time():
-#     print(startmonth,startyear)
-#
-#     if startmonth == 12:
-#         startyear+=1
-#         startmonth=1
-#     else:
-#         startmonth+=1
 
 # fetches ab calender data
 def getAlphaBotCalenderData():
@@ -136,6 +124,8 @@ def get_given_month_data(startdate, enddate):
         response = requests.get(url, cookies=cookies)
         data = response.json()
 
+        # print(data)
+
         # def filterFun(el):
         #     if el["isWinner"]:
         #         return True
@@ -153,7 +143,7 @@ def get_given_month_data(startdate, enddate):
         # filtered = filter(filterFun, data["data"])
         # filtered2 = map(mapFun, filtered)
 
-        filtered2 = map(mapFun, data["data"])
+        filtered2 = map(mapFun, data["projects"])
 
         result = []
         for x in filtered2:
@@ -193,32 +183,24 @@ firstLoop = True
 
 @client.event
 async def on_ready():
-    # try :
-    #     invite = await client.fetch_invite("https://discord.gg/WRKTBAX65u")
-    #     print(invite.guild.id)
-    # except Exception as e:
-    #     print(e)
+    print(f"account {accountNo} has {len(client.guilds)} servers joined up.")
     guilds_to_leave = []
     global firstLoop
     if firstLoop:
         collection_data = getAlphaBotCalenderData()
-        print(collection_data)
-        for data in collection_data:
-            print(data)
-            try:
-                if data["discordUrl"] != "":
-                    invite = await client.fetch_invite(data["discordUrl"])
-                    data["guildId"] = invite.guild.id
-            except Exception as e:
-                print(e)
         print(collection_data)
         if not collection_data:
             print(
                 "Your alphabot session token seems expired. Please replace the token with a fresh one and try again. Or you never used alphabot so your seeing this error.")
             return
         for guild in client.guilds:
-            if guild.id not in whitelist:
-                print(f"Checking any winnings/pendings for {guild.name}")
+            if str(guild.id) in blacklist:
+                guilds_to_leave.append(guild)
+                await guild.leave()
+                print(f"Left {guild.name} server")
+                time.sleep(5)
+            elif str(guild.id) not in whitelist and not remove_only_blacklist:
+                print(f"Checking any winnings/pendings for {guild.name}", guild.id)
                 to_remove = "sold out" in guild.name.lower() or check_if_no_winnings(
                     guild.name.lower()) or check_if_already_minted_out(collection_data, guild.name.lower())
                 print(f"toRemove:{to_remove}")
@@ -232,7 +214,7 @@ async def on_ready():
             for x in guilds_to_leave:
                 print("    ", x.name)
             print("Successfully removed junk servers")
-        print("You can close the script now")
+    exit()
     firstLoop = False
 
 
